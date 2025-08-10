@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wedding Story Quest - 結婚祝いRPG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+```
+    body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: 'Courier New', monospace;
+    }
+    
+    #gameContainer {
+        position: relative;
+        background: #000;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    
+    canvas {
+        display: block;
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+    }
+    
+    #dialogueBox {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        background: linear-gradient(to bottom, #2c3e50, #34495e);
+        border: 3px solid #ecf0f1;
+        border-radius: 10px;
+        padding: 20px;
+        color: white;
+        font-size: 18px;
+        line-height: 1.6;
+        display: none;
+        z-index: 10;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+    }
+    
+    #dialogueBox.active {
+        display: block;
+        animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+        from {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+    
+    #speakerName {
+        color: #f39c12;
+        font-weight: bold;
+        margin-bottom: 10px;
+        font-size: 20px;
+    }
+    
+    #quizOptions {
+        margin-top: 15px;
+        display: none;
+    }
+    
+    .quizButton {
+        display: block;
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        background: linear-gradient(to right, #3498db, #2980b9);
+        color: white;
+        border: 2px solid #ecf0f1;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+    
+    .quizButton:hover {
+        background: linear-gradient(to right, #e74c3c, #c0392b);
+        transform: translateX(5px);
+    }
+    
+    #startScreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 20;
+    }
+    
+    #startScreen h1 {
+        color: white;
+        font-size: 48px;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    #startButton {
+        padding: 15px 40px;
+        font-size: 24px;
+        background: linear-gradient(to right, #f39c12, #e67e22);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+    
+    #startButton:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+    
+    #stageTitle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: white;
+        font-size: 36px;
+        text-align: center;
+        z-index: 15;
+        display: none;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+        background: rgba(0,0,0,0.7);
+        padding: 20px 40px;
+        border-radius: 10px;
+        border: 3px solid gold;
+    }
+    
+    #controls {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: white;
+        background: rgba(0,0,0,0.7);
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 14px;
+        z-index: 5;
+    }
+    
+    #mobileControls {
+        position: absolute;
+        bottom: 150px;
+        left: 20px;
+        z-index: 8;
+        display: none;
+    }
+    
+    @media (max-width: 768px), (pointer: coarse) {
+        #mobileControls {
+            display: block;
+        }
+        
+        #controls {
+            font-size: 12px;
+            top: 5px;
+            right: 5px;
+            padding: 5px;
+        }
+        
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        canvas {
+            width: 100vw !important;
+            height: auto !important;
+            max-height: 60vh;
+        }
+    }
+    
+    .dpad {
+        position: relative;
+        width: 150px;
+        height: 150px;
+    }
+    
+    .dpad-button {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.8);
+        border: 2px solid #333;
+        border-radius: 10px;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        transition: all 0.1s;
+    }
+    
+    .dpad-button:active {
+        background: rgba(100, 150, 255, 0.9);
+        transform: scale(0.95);
+    }
+    
+    .dpad-up {
+        top: 0;
+        left: 50px;
+    }
+    
+    .dpad-down {
+        bottom: 0;
+        left: 50px;
+    }
+    
+    .dpad-left {
+        top: 50px;
+        left: 0;
+    }
+    
+    .dpad-right {
+        top: 50px;
+        right: 0;
+    }
+    
+    #actionButton {
+        position: absolute;
+        bottom: 180px;
+        right: 30px;
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 100, 100, 0.8);
+        border: 3px solid #333;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        font-weight: bold;
+        color: white;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: none;
+        z-index: 8;
+    }
+    
+    #actionButton:active {
+        background: rgba(255, 50, 50, 0.9);
+        transform: scale(0.95);
+    }
+    
+    @media (max-width: 768px), (pointer: coarse) {
+        #actionButton {
+            display: flex;
+        }
+    }
+    
+    #endScreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: none;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 25;
+        color: white;
+        text-align: center;
+        padding: 20px;
+    }
+    
+    #endScreen h1 {
+        font-size: 48px;
+        margin-bottom: 20px;
+        text-shadow: 3px 3px 6px rgba(0,0,0,0.5);
+    }
+    
+    #endScreen p {
+        font-size: 24px;
+        margin: 10px 0;
+    }
+    
+    #restartButton {
+        margin-top: 30px;
+        padding: 15px 40px;
+        font-size: 20px;
+        background: linear-gradient(to right, #11998e, #38ef7d);
+        color: white;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: inherit;
+    }
+    
+    #restartButton:hover {
+        transform: scale(1.1);
+    }
+</style>
+```
+
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+
+```
+    <div id="controls">
+        操作: 矢印キー or WASD で移動<br>
+        スペース or Enter で話す/決定
+    </div>
+    
+    <div id="mobileControls">
+        <div class="dpad">
+            <div class="dpad-button dpad-up" data-direction="up">↑</div>
+            <div class="dpad-button dpad-down" data-direction="down">↓</div>
+            <div class="dpad-button dpad-left" data-direction="left">←</div>
+            <div class="dpad-button dpad-right" data-direction="right">→</div>
+        </div>
+    </div>
+    
+    <div id="actionButton">話す</div>
+    
+    <div id="dialogueBox">
+        <div id="speakerName"></div>
+        <div id="dialogueText"></div>
+        <div id="quizOptions"></div>
+    </div>
+    
+    <div id="stageTitle"></div>
+    
+    <div id="startScreen">
+        <h1>💍 Wedding Story Quest 💍</h1>
+        <p style="color: white; margin-bottom: 30px; font-size: 20px;">二人の愛の物語を追体験しよう！</p>
+        <button id="startButton">ゲームスタート</button>
+    </div>
+    
+    <div id="endScreen">
+        <h1>🎊 Congratulations! 🎊</h1>
+        <p>全ステージクリア！</p>
+        <p id="finalScore"></p>
+        <p style="margin-top: 20px; font-size: 18px;">末永くお幸せに！</p>
+        <button id="restartButton">もう一度プレイ</button>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    canvas.width = 800;
+    canvas.height = 600;
+    
+    // ゲーム状態管理
+    const game = {
+        currentStage: 0,
+        score: 0,
+        totalQuestions: 4,
+        isDialogueActive: false,
+        isQuizActive: false,
+        currentDialogue: null,
+        dialogueIndex: 0
+    };
+    
+    // プレイヤー
+    const player = {
+        x: 400,
+        y: 400,
+        width: 32,
+        height: 48,
+        speed: 4,
+        direction: 'down',
+        isMoving: false,
+        frameCount: 0,
+        currentFrame: 0
+    };
+    
+    // ステージデータ
+    const stages = [
+        {
+            name: "Stage 1: マッチングアプリ",
+            bgColor: "#e8f5e9",
+            npcs: [
+                {
+                    name: "友人A",
+                    x: 300,
+                    y: 200,
+                    dialogue: [
+                        "やあ！最近どう？",
+                        "実はさ、すごくいいマッチングアプリがあるんだ！",
+                        "君にぴったりの人が見つかるかもしれないよ！"
+                    ]
+                },
+                {
+                    name: "スマホ",
+                    x: 500,
+                    y: 200,
+                    isQuizNPC: true,
+                    dialogue: [
+                        "マッチングアプリを開いています...",
+                        "おっ！マッチしました！",
+                        "クイズ: 二人が最初に使ったマッチングアプリは？"
+                    ],
+                    quiz: {
+                        question: "二人が最初に使ったマッチングアプリは？",
+                        options: ["Pairs", "Tinder", "Omiai", "With"],
+                        correct: 0
+                    }
+                }
+            ]
+        },
+        {
+            name: "Stage 2: メッセージ交換",
+            bgColor: "#e3f2fd",
+            npcs: [
+                {
+                    name: "パートナー",
+                    x: 400,
+                    y: 200,
+                    isQuizNPC: true,
+                    dialogue: [
+                        "はじめまして！プロフィール見ました。",
+                        "趣味が合いそうですね！",
+                        "クイズ: 最初のメッセージで話した話題は？"
+                    ],
+                    quiz: {
+                        question: "最初のメッセージで話した話題は？",
+                        options: ["映画について", "料理について", "旅行について", "音楽について"],
+                        correct: 2
+                    }
+                }
+            ]
+        },
+        {
+            name: "Stage 3: 初デート",
+            bgColor: "#fff3e0",
+            npcs: [
+                {
+                    name: "カフェ店員",
+                    x: 200,
+                    y: 200,
+                    dialogue: [
+                        "いらっしゃいませ！",
+                        "素敵なカップルですね！",
+                        "ごゆっくりどうぞ。"
+                    ]
+                },
+                {
+                    name: "パートナー",
+                    x: 400,
+                    y: 300,
+                    isQuizNPC: true,
+                    dialogue: [
+                        "今日は会えて嬉しいです！",
+                        "緊張してますが、楽しみにしてました。",
+                        "クイズ: 初デートの場所はどこ？"
+                    ],
+                    quiz: {
+                        question: "初デートの場所はどこ？",
+                        options: ["水族館", "遊園地", "カフェ", "映画館"],
+                        correct: 2
+                    }
+                }
+            ]
+        },
+        {
+            name: "Stage 4: プロポーズ",
+            bgColor: "#fce4ec",
+            npcs: [
+                {
+                    name: "パートナー",
+                    x: 400,
+                    y: 250,
+                    isQuizNPC: true,
+                    dialogue: [
+                        "今日は大切な話があって...",
+                        "これまでの時間、本当に幸せでした。",
+                        "クイズ: プロポーズの言葉に含まれていたキーワードは？"
+                    ],
+                    quiz: {
+                        question: "プロポーズの言葉に含まれていたキーワードは？",
+                        options: ["永遠に一緒に", "結婚してください", "愛してる", "すべて"],
+                        correct: 1
+                    }
+                }
+            ]
+        }
+    ];
+    
+    // 現在のステージ
+    let currentStage = stages[0];
+    let currentNPCs = [];
+    
+    // キー入力管理
+    const keys = {};
+    const touches = {
+        up: false,
+        down: false,
+        left: false,
+        right: false
+    };
+    
+    // ゲーム初期化
+    function init() {
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('restartButton').addEventListener('click', restartGame);
+        
+        // キーボード操作
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            
+            if ((e.key === ' ' || e.key === 'Enter') && !game.isQuizActive) {
+                handleInteraction();
+            }
+        });
+        
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // モバイル操作の設定
+        setupMobileControls();
+    }
+    
+    function setupMobileControls() {
+        // 方向ボタン
+        const dpadButtons = document.querySelectorAll('.dpad-button');
+        dpadButtons.forEach(button => {
+            const direction = button.dataset.direction;
+            
+            // タッチ開始
+            button.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                touches[direction] = true;
+            });
+            
+            // タッチ終了
+            button.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                touches[direction] = false;
+            });
+            
+            // マウス操作（デバッグ用）
+            button.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                touches[direction] = true;
+            });
+            
+            button.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                touches[direction] = false;
+            });
+            
+            button.addEventListener('mouseleave', (e) => {
+                touches[direction] = false;
+            });
+        });
+        
+        // アクションボタン
+        const actionButton = document.getElementById('actionButton');
+        actionButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!game.isQuizActive) {
+                handleInteraction();
+            }
+        });
+        
+        actionButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!game.isQuizActive) {
+                handleInteraction();
+            }
+        });
+    }
+    
+    function startGame() {
+        document.getElementById('startScreen').style.display = 'none';
+        game.currentStage = 0;
+        game.score = 0;
+        loadStage(0);
+        gameLoop();
+    }
+    
+    function restartGame() {
+        document.getElementById('endScreen').style.display = 'none';
+        startGame();
+    }
+    
+    function loadStage(stageIndex) {
+        currentStage = stages[stageIndex];
+        currentNPCs = currentStage.npcs.map(npc => ({...npc}));
+        player.x = 400;
+        player.y = 400;
+        
+        // ステージタイトル表示
+        showStageTitle(currentStage.name);
+    }
+    
+    function showStageTitle(title) {
+        const titleElement = document.getElementById('stageTitle');
+        titleElement.textContent = title;
+        titleElement.style.display = 'block';
+        
+        setTimeout(() => {
+            titleElement.style.display = 'none';
+        }, 2000);
+    }
+    
+    function handleInteraction() {
+        if (game.isDialogueActive) {
+            if (game.currentDialogue && game.dialogueIndex < game.currentDialogue.length - 1) {
+                game.dialogueIndex++;
+                showDialogue(game.currentDialogue[game.dialogueIndex], game.currentNPC.name);
+            } else if (game.currentNPC && game.currentNPC.isQuizNPC && game.dialogueIndex === game.currentDialogue.length - 1) {
+                showQuiz(game.currentNPC.quiz);
+            } else {
+                hideDialogue();
+            }
+            return;
+        }
+        
+        // NPCとの距離チェック
+        for (let npc of currentNPCs) {
+            const distance = Math.sqrt(Math.pow(player.x - npc.x, 2) + Math.pow(player.y - npc.y, 2));
+            if (distance < 60) {
+                game.currentNPC = npc;
+                game.currentDialogue = npc.dialogue;
+                game.dialogueIndex = 0;
+                showDialogue(npc.dialogue[0], npc.name);
+                break;
+            }
+        }
+    }
+    
+    function showDialogue(text, speaker) {
+        game.isDialogueActive = true;
+        const dialogueBox = document.getElementById('dialogueBox');
+        const speakerName = document.getElementById('speakerName');
+        const dialogueText = document.getElementById('dialogueText');
+        
+        dialogueBox.classList.add('active');
+        speakerName.textContent = speaker;
+        dialogueText.textContent = text;
+        document.getElementById('quizOptions').style.display = 'none';
+    }
+    
+    function hideDialogue() {
+        game.isDialogueActive = false;
+        game.currentNPC = null;
+        game.currentDialogue = null;
+        document.getElementById('dialogueBox').classList.remove('active');
+    }
+    
+    function showQuiz(quiz) {
+        game.isQuizActive = true;
+        const quizOptions = document.getElementById('quizOptions');
+        quizOptions.innerHTML = '';
+        quizOptions.style.display = 'block';
+        
+        quiz.options.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.className = 'quizButton';
+            button.textContent = option;
+            button.onclick = () => handleQuizAnswer(index, quiz.correct);
+            quizOptions.appendChild(button);
+        });
+    }
+    
+    function handleQuizAnswer(selected, correct) {
+        game.isQuizActive = false;
+        
+        if (selected === correct) {
+            game.score++;
+            showDialogue("正解！💕 よく覚えてるね！", "システム");
+        } else {
+            showDialogue("残念！でも大丈夫、愛があれば！", "システム");
+        }
+        
+        setTimeout(() => {
+            hideDialogue();
+            
+            // 次のステージへ
+            if (game.currentStage < stages.length - 1) {
+                game.currentStage++;
+                loadStage(game.currentStage);
+            } else {
+                // ゲームクリア
+                showEndScreen();
+            }
+        }, 2000);
+    }
+    
+    function showEndScreen() {
+        const endScreen = document.getElementById('endScreen');
+        const finalScore = document.getElementById('finalScore');
+        endScreen.style.display = 'flex';
+        finalScore.textContent = `スコア: ${game.score} / ${game.totalQuestions} 問正解`;
+    }
+    
+    function updatePlayer() {
+        if (game.isDialogueActive) return;
+        
+        let moving = false;
+        
+        // キーボードとタッチ操作の統合
+        if (keys['ArrowUp'] || keys['w'] || keys['W'] || touches.up) {
+            player.y -= player.speed;
+            player.direction = 'up';
+            moving = true;
+        }
+        if (keys['ArrowDown'] || keys['s'] || keys['S'] || touches.down) {
+            player.y += player.speed;
+            player.direction = 'down';
+            moving = true;
+        }
+        if (keys['ArrowLeft'] || keys['a'] || keys['A'] || touches.left) {
+            player.x -= player.speed;
+            player.direction = 'left';
+            moving = true;
+        }
+        if (keys['ArrowRight'] || keys['d'] || keys['D'] || touches.right) {
+            player.x += player.speed;
+            player.direction = 'right';
+            moving = true;
+        }
+        
+        // 画面境界チェック
+        player.x = Math.max(player.width/2, Math.min(canvas.width - player.width/2, player.x));
+        player.y = Math.max(player.height/2, Math.min(canvas.height - player.height/2, player.y));
+        
+        // アニメーション更新
+        if (moving) {
+            player.frameCount++;
+            if (player.frameCount > 10) {
+                player.currentFrame = (player.currentFrame + 1) % 4;
+                player.frameCount = 0;
+            }
+        } else {
+            player.currentFrame = 0;
+        }
+        
+        player.isMoving = moving;
+    }
+    
+    function drawPlayer() {
+        ctx.save();
+        
+        const bobOffset = player.isMoving ? Math.sin(player.frameCount * 0.3) * 2 : 0;
+        const px = player.x;
+        const py = player.y + bobOffset;
+        
+        // 影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(px, player.y + player.height/2 - 5, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 体
+        const bodyGradient = ctx.createLinearGradient(px - player.width/2, py - player.height/2, px + player.width/2, py + player.height/2);
+        bodyGradient.addColorStop(0, '#5c9edd');
+        bodyGradient.addColorStop(1, '#4a7fc7');
+        ctx.fillStyle = bodyGradient;
+        ctx.fillRect(px - player.width/2 + 4, py - 10, player.width - 8, 35);
+        
+        // 腕
+        ctx.fillStyle = '#fdbcb4';
+        const armSwing = player.isMoving ? Math.sin(player.frameCount * 0.2) * 5 : 0;
+        ctx.fillRect(px - player.width/2 - 2, py - 5 + armSwing, 6, 20);
+        ctx.fillRect(px + player.width/2 - 4, py - 5 - armSwing, 6, 20);
+        
+        // 足
+        ctx.fillStyle = '#2c3e50';
+        const legOffset = player.isMoving ? Math.sin(player.frameCount * 0.2) * 3 : 0;
+        ctx.fillRect(px - 8, py + 20 + legOffset, 6, 15);
+        ctx.fillRect(px + 2, py + 20 - legOffset, 6, 15);
+        
+        // 靴
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(px - 9, py + 33 + legOffset, 8, 5);
+        ctx.fillRect(px + 1, py + 33 - legOffset, 8, 5);
+        
+        // 頭
+        const headGradient = ctx.createRadialGradient(px, py - player.height/4, 0, px, py - player.height/4, 15);
+        headGradient.addColorStop(0, '#fdd0c1');
+        headGradient.addColorStop(1, '#fdbcb4');
+        ctx.fillStyle = headGradient;
+        ctx.beginPath();
+        ctx.arc(px, py - player.height/4, 14, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 髪の毛
+        ctx.fillStyle = '#3e2723';
+        ctx.beginPath();
+        ctx.arc(px, py - player.height/4 - 5, 14, Math.PI, Math.PI * 2);
+        ctx.fill();
+        
+        // 髪の毛のディテール
+        ctx.strokeStyle = '#2e1a17';
+        ctx.lineWidth = 1;
+        for(let i = -10; i <= 10; i += 5) {
+            ctx.beginPath();
+            ctx.moveTo(px + i, py - player.height/4 - 5);
+            ctx.lineTo(px + i + 2, py - player.height/4 - 12);
+            ctx.stroke();
+        }
+        
+        // 目
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.ellipse(px - 5, py - player.height/4, 3, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(px + 5, py - player.height/4, 3, 4, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.fillStyle = '#2c3e50';
+        ctx.beginPath();
+        ctx.arc(px - 5, py - player.height/4, 2, 0, Math.PI * 2);
+        ctx.arc(px + 5, py - player.height/4, 2, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 瞳
+        ctx.fillStyle = '#fff';
+        ctx.beginPath();
+        ctx.arc(px - 4, py - player.height/4 - 1, 0.8, 0, Math.PI * 2);
+        ctx.arc(px + 6, py - player.height/4 - 1, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 眉毛
+        ctx.strokeStyle = '#3e2723';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(px - 8, py - player.height/4 - 6);
+        ctx.lineTo(px - 3, py - player.height/4 - 7);
+        ctx.moveTo(px + 3, py - player.height/4 - 7);
+        ctx.lineTo(px + 8, py - player.height/4 - 6);
+        ctx.stroke();
+        
+        // 口
+        ctx.strokeStyle = '#e57373';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (player.isMoving) {
+            ctx.arc(px, py - player.height/4 + 5, 3, 0, Math.PI);
+        } else {
+            ctx.moveTo(px - 3, py - player.height/4 + 5);
+            ctx.lineTo(px + 3, py - player.height/4 + 5);
+        }
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+    
+    function drawNPC(npc) {
+        // 影
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.beginPath();
+        ctx.ellipse(npc.x, npc.y + 20, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // NPCの種類に応じて異なる見た目
+        if (npc.name === "スマホ") {
+            // スマホの描画
+            ctx.fillStyle = '#1a1a1a';
+            ctx.fillRect(npc.x - 15, npc.y - 25, 30, 50);
+            ctx.fillStyle = '#4a90e2';
+            ctx.fillRect(npc.x - 12, npc.y - 20, 24, 35);
+            
+            // 画面の光
+            const gradient = ctx.createLinearGradient(npc.x - 12, npc.y - 20, npc.x + 12, npc.y + 15);
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(npc.x - 12, npc.y - 20, 24, 35);
+            
+            // ハートアイコン（マッチングアプリ）
+            ctx.fillStyle = '#e91e63';
+            ctx.font = '20px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('💕', npc.x, npc.y);
+        } else if (npc.name === "カフェ店員") {
+            // カフェ店員の体
+            ctx.fillStyle = '#8d6e63';
+            ctx.fillRect(npc.x - 16, npc.y - 10, 32, 35);
+            
+            // エプロン
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(npc.x - 12, npc.y - 5, 24, 25);
+            
+            // 腕
+            ctx.fillStyle = '#fdbcb4';
+            ctx.fillRect(npc.x - 20, npc.y - 5, 6, 20);
+            ctx.fillRect(npc.x + 14, npc.y - 5, 6, 20);
+            
+            // 頭
+            ctx.fillStyle = '#fdbcb4';
+            ctx.beginPath();
+            ctx.arc(npc.x, npc.y - 20, 13, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 髪（女性風）
+            ctx.fillStyle = '#5d4037';
+            ctx.beginPath();
+            ctx.arc(npc.x, npc.y - 25, 13, Math.PI, Math.PI * 2);
+            ctx.fill();
+            // ロングヘア
+            ctx.fillRect(npc.x - 13, npc.y - 20, 5, 15);
+            ctx.fillRect(npc.x + 8, npc.y - 20, 5, 15);
+            
+            // カフェ帽子
+            ctx.fillStyle = '#3e2723';
+            ctx.beginPath();
+            ctx.ellipse(npc.x, npc.y - 32, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // パートナーまたは友人の体
+            const isPartner = npc.name === "パートナー";
+            const bodyColor = isPartner ? '#f06292' : '#7e57c2';
+            
+            // 体
+            const bodyGradient = ctx.createLinearGradient(npc.x - 16, npc.y - 10, npc.x + 16, npc.y + 25);
+            bodyGradient.addColorStop(0, bodyColor);
+            bodyGradient.addColorStop(1, isPartner ? '#ec407a' : '#673ab7');
+            ctx.fillStyle = bodyGradient;
+            ctx.fillRect(npc.x - 16, npc.y - 10, 32, 35);
+            
+            // 腕
+            ctx.fillStyle = '#fdbcb4';
+            ctx.fillRect(npc.x - 20, npc.y - 5, 6, 20);
+            ctx.fillRect(npc.x + 14, npc.y - 5, 6, 20);
+            
+            // 足
+            ctx.fillStyle = isPartner ? '#37474f' : '#2c3e50';
+            ctx.fillRect(npc.x - 8, npc.y + 20, 6, 15);
+            ctx.fillRect(npc.x + 2, npc.y + 20, 6, 15);
+            
+            // 頭
+            const headGradient = ctx.createRadialGradient(npc.x, npc.y - 20, 0, npc.x, npc.y - 20, 14);
+            headGradient.addColorStop(0, '#fdd0c1');
+            headGradient.addColorStop(1, '#fdbcb4');
+            ctx.fillStyle = headGradient;
+            ctx.beginPath();
+            ctx.arc(npc.x, npc.y - 20, 14, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 髪
+            if (isPartner) {
+                // パートナーの髪（ロングヘア風）
+                ctx.fillStyle = '#6d4c41';
+                ctx.beginPath();
+                ctx.arc(npc.x, npc.y - 25, 14, Math.PI, Math.PI * 2);
+                ctx.fill();
+                ctx.fillRect(npc.x - 14, npc.y - 20, 6, 20);
+                ctx.fillRect(npc.x + 8, npc.y - 20, 6, 20);
+            } else {
+                // 友人の髪（ショートヘア）
+                ctx.fillStyle = '#424242';
+                ctx.beginPath();
+                ctx.arc(npc.x, npc.y - 25, 14, Math.PI, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 目
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.ellipse(npc.x - 5, npc.y - 20, 3, 4, 0, 0, Math.PI * 2);
+            ctx.ellipse(npc.x + 5, npc.y - 20, 3, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = isPartner ? '#c2185b' : '#512da8';
+            ctx.beginPath();
+            ctx.arc(npc.x - 5, npc.y - 20, 2, 0, Math.PI * 2);
+            ctx.arc(npc.x + 5, npc.y - 20, 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 口
+            ctx.strokeStyle = '#e57373';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(npc.x, npc.y - 13, 3, 0, Math.PI);
+            ctx.stroke();
+        }
+        
+        // 名前表示
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(npc.name, npc.x, npc.y - 45);
+        
+        // クイズNPCには特別なマーク
+        if (npc.isQuizNPC) {
+            // キラキラエフェクト
+            ctx.save();
+            ctx.fillStyle = '#ffd700';
+            ctx.font = '24px Arial';
+            const sparkle = Date.now() % 1000 < 500 ? '✨' : '💫';
+            ctx.fillText(sparkle, npc.x, npc.y - 60);
+            ctx.restore();
+        }
+    }
+    
+    function draw() {
+        // 背景
+        ctx.fillStyle = currentStage.bgColor;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // グリッド模様
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 50) {
+            ctx.beginPath();
+            ctx.moveTo(i, 0);
+            ctx.lineTo(i, canvas.height);
+            ctx.stroke();
+        }
+        for (let i = 0; i < canvas.height; i += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, i);
+            ctx.lineTo(canvas.width, i);
+            ctx.stroke();
+        }
+        
+        // NPCs描画
+        currentNPCs.forEach(npc => drawNPC(npc));
+        
+        // プレイヤー描画
+        drawPlayer();
+        
+        // ステージ情報
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Stage: ${game.currentStage + 1}/4`, 10, 30);
+        ctx.fillText(`Score: ${game.score}/${game.totalQuestions}`, 10, 50);
+    }
+    
+    function gameLoop() {
+        updatePlayer();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+    
+    // ゲーム開始
+    init();
+</script>
+```
+
+</body>
+</html>
